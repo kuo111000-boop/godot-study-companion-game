@@ -1,0 +1,405 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.96, 0.93, 0.98, 1)
+
+[node name="TopBar" type="Panel" parent="."]
+layout_mode = 1
+offset_left = 30
+offset_top = 80
+offset_right = 1050
+offset_bottom = 200
+theme_override_styles/panel = null
+
+[node name="CoinsLabel" type="Button" parent="TopBar"]
+layout_mode = 1
+anchor_left = 0.68
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 18
+offset_right = -20
+offset_bottom = -18
+text = "讀書幣：0"
+flat = false
+
+[node name="TitleLabel" type="Label" parent="TopBar"]
+layout_mode = 1
+offset_left = 28
+offset_top = 18
+offset_right = 420
+offset_bottom = 118
+theme_override_font_sizes/font_size = 46
+text = "陪我讀書"
+
+[node name="CharacterButton" type="Button" parent="."]
+layout_mode = 1
+anchor_left = 0.16
+anchor_top = 0.22
+anchor_right = 0.7
+anchor_bottom = 0.9
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+text = ""
+flat = true
+
+[node name="CharacterDesk" type="ColorRect" parent="CharacterButton"]
+layout_mode = 1
+anchor_left = 0.12
+anchor_top = 0.62
+anchor_right = 0.86
+anchor_bottom = 0.9
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+color = Color(0.86, 0.78, 0.9, 1)
+
+[node name="CharacterBody" type="ColorRect" parent="CharacterButton"]
+layout_mode = 1
+anchor_left = 0.35
+anchor_top = 0.36
+anchor_right = 0.66
+anchor_bottom = 0.68
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+color = Color(0.97, 0.82, 0.84, 1)
+
+[node name="CharacterHead" type="ColorRect" parent="CharacterButton"]
+layout_mode = 1
+anchor_left = 0.4
+anchor_top = 0.12
+anchor_right = 0.6
+anchor_bottom = 0.32
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+color = Color(0.95, 0.82, 0.7, 1)
+
+[node name="CharacterHair" type="ColorRect" parent="CharacterButton"]
+layout_mode = 1
+anchor_left = 0.38
+anchor_top = 0.08
+anchor_right = 0.62
+anchor_bottom = 0.26
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+color = Color(0.37, 0.29, 0.47, 1)
+
+[node name="CharacterArmLeft" type="ColorRect" parent="CharacterButton"]
+layout_mode = 1
+anchor_left = 0.24
+anchor_top = 0.38
+anchor_right = 0.34
+anchor_bottom = 0.68
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+color = Color(0.95, 0.82, 0.7, 1)
+
+[node name="CharacterArmRight" type="ColorRect" parent="CharacterButton"]
+layout_mode = 1
+anchor_left = 0.66
+anchor_top = 0.38
+anchor_right = 0.76
+anchor_bottom = 0.68
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+color = Color(0.95, 0.82, 0.7, 1)
+
+[node name="CharacterQuote" type="Label" parent="."]
+layout_mode = 1
+anchor_left = 0.18
+anchor_top = 0.88
+anchor_right = 0.72
+anchor_bottom = 0.94
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "今天也一起努力吧。"
+
+[node name="SideButtons" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.77
+anchor_top = 0.3
+anchor_right = 0.92
+anchor_bottom = 0.78
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+alignment = 1
+
+[node name="StudyButton" type="Button" parent="SideButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "陪我讀書"
+
+[node name="WeeklyTaskButton" type="Button" parent="SideButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "每週任務"
+
+[node name="DailyTaskButton" type="Button" parent="SideButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "日常任務"
+
+[node name="RewardButton" type="Button" parent="SideButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "獎勵兌換"
+
+[node name="StudyPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.1
+anchor_top = 0.18
+anchor_right = 0.9
+anchor_bottom = 0.82
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StudyTitle" type="Label" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 30
+offset_top = 30
+offset_right = 250
+offset_bottom = 92
+theme_override_font_sizes/font_size = 38
+text = "開始讀書"
+
+[node name="SubjectLabel" type="Label" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 40
+offset_top = 120
+offset_right = 220
+offset_bottom = 160
+text = "科目"
+
+[node name="SubjectOption" type="OptionButton" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 200
+offset_top = 110
+offset_right = 500
+offset_bottom = 170
+
+[node name="DurationLabel" type="Label" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 40
+offset_top = 200
+offset_right = 220
+offset_bottom = 240
+text = "時間"
+
+[node name="DurationOption" type="OptionButton" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 200
+offset_top = 190
+offset_right = 500
+offset_bottom = 250
+
+[node name="CompanionLabel" type="Label" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 40
+offset_top = 280
+offset_right = 220
+offset_bottom = 320
+text = "陪讀角色"
+
+[node name="CompanionOption" type="OptionButton" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 200
+offset_top = 270
+offset_right = 500
+offset_bottom = 330
+
+[node name="StartStudyButton" type="Button" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 60
+offset_top = 390
+offset_right = 260
+offset_bottom = 470
+text = "開始讀書"
+
+[node name="CloseStudyButton" type="Button" parent="StudyPanel"]
+layout_mode = 1
+offset_left = 310
+offset_top = 390
+offset_right = 510
+offset_bottom = 470
+text = "取消"
+
+[node name="StudyScreen" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.12
+anchor_top = 0.18
+anchor_right = 0.88
+anchor_bottom = 0.82
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StudyTimerLabel" type="Label" parent="StudyScreen"]
+layout_mode = 1
+offset_left = 80
+offset_top = 90
+offset_right = 420
+offset_bottom = 200
+theme_override_font_sizes/font_size = 62
+text = "30:00"
+
+[node name="StudyMetaLabel" type="Label" parent="StudyScreen"]
+layout_mode = 1
+offset_left = 80
+offset_top = 230
+offset_right = 560
+offset_bottom = 300
+theme_override_font_sizes/font_size = 28
+text = "數學 • 30 分鐘 • 男主角"
+
+[node name="ProgressBar" type="ProgressBar" parent="StudyScreen"]
+layout_mode = 1
+offset_left = 80
+offset_top = 340
+offset_right = 560
+offset_bottom = 380
+max_value = 100.0
+value = 0.0
+show_percentage = true
+
+[node name="EndStudyButton" type="Button" parent="StudyScreen"]
+layout_mode = 1
+offset_left = 150
+offset_top = 430
+offset_right = 460
+offset_bottom = 500
+text = "結束讀書"
+
+[node name="TaskPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.12
+anchor_top = 0.18
+anchor_right = 0.88
+anchor_bottom = 0.82
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TaskTitle" type="Label" parent="TaskPanel"]
+layout_mode = 1
+offset_left = 30
+offset_top = 30
+offset_right = 300
+offset_bottom = 90
+theme_override_font_sizes/font_size = 34
+text = "任務"
+
+[node name="TaskText" type="RichTextLabel" parent="TaskPanel"]
+layout_mode = 1
+offset_left = 30
+offset_top = 100
+offset_right = 560
+offset_bottom = 500
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="CloseTaskButton" type="Button" parent="TaskPanel"]
+layout_mode = 1
+offset_left = 180
+offset_top = 530
+offset_right = 405
+offset_bottom = 590
+text = "關閉"
+
+[node name="RewardPanel" type="Panel" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.12
+anchor_top = 0.18
+anchor_right = 0.88
+anchor_bottom = 0.82
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RewardTitle" type="Label" parent="RewardPanel"]
+layout_mode = 1
+offset_left = 30
+offset_top = 30
+offset_right = 300
+offset_bottom = 90
+theme_override_font_sizes/font_size = 34
+text = "獎勵兌換"
+
+[node name="RewardList" type="VBoxContainer" parent="RewardPanel"]
+layout_mode = 1
+offset_left = 30
+offset_top = 110
+offset_right = 560
+offset_bottom = 440
+alignment = 1
+
+[node name="CloseRewardButton" type="Button" parent="RewardPanel"]
+layout_mode = 1
+offset_left = 180
+offset_top = 470
+offset_right = 405
+offset_bottom = 525
+text = "關閉"
+
+[node name="ToastLabel" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchor_left = 0.2
+anchor_top = 0.8
+anchor_right = 0.8
+anchor_bottom = 0.86
+offset_left = 0
+offset_top = 0
+offset_right = 0
+offset_bottom = 0
+autowrap_mode = 2
+theme_override_colors/font_color = Color(0.13, 0.12, 0.2, 1)
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+text = ""

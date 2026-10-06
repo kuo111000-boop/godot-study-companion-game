@@ -1,0 +1,366 @@
+extends Control
+
+const STORAGE_PATH = "user://study_companion_save.json"
+const REWARD_OPTIONS = [
+    {"id": "school_uniform", "name": "校服套裝", "cost": 150, "type": "服裝"},
+    {"id": "nightdesk_set", "name": "夜晚書桌套裝", "cost": 200, "type": "服裝"},
+    {"id": "flirty_dialogue", "name": "戀愛台詞包", "cost": 120, "type": "互動"},
+]
+
+const DAILY_TASK_TEMPLATES = [
+    {"id": "daily_hours", "title": "當天累積讀書 1 小時", "goal": 60, "reward": 50},
+    {"id": "daily_session", "title": "完成一次讀書計時", "goal": 1, "reward": 30},
+    {"id": "daily_subjects", "title": "當天讀 2 個不同科目", "goal": 2, "reward": 40},
+]
+
+const WEEKLY_TASK_TEMPLATES = [
+    {"id": "weekly_hours", "title": "累積讀書 5 小時", "goal": 300, "reward": 80},
+    {"id": "weekly_subjects", "title": "完成 3 個不同科目的讀書", "goal": 3, "reward": 80},
+    {"id": "weekly_sessions", "title": "完成 5 次讀書計時", "goal": 5, "reward": 100},
+]
+
+var save_data = {
+    "coins": 0,
+    "sessions": [],
+    "claimed_daily_tasks": [],
+    "claimed_weekly_tasks": [],
+    "purchased_rewards": []
+}
+
+var current_session: Dictionary = {}
+var countdown_remaining: float = 0.0
+var timer_active: bool = false
+var toast_timer: float = 0.0
+
+@onready var coins_label: Button = $TopBar/CoinsLabel
+@onready var character_button: Button = $CharacterButton
+@onready var character_quote: Label = $CharacterQuote
+@onready var study_panel: Panel = $StudyPanel
+@onready var study_subject_option: OptionButton = $StudyPanel/SubjectOption
+@onready var study_duration_option: OptionButton = $StudyPanel/DurationOption
+@onready var study_companion_option: OptionButton = $StudyPanel/CompanionOption
+@onready var study_screen: Panel = $StudyScreen
+@onready var study_timer_label: Label = $StudyScreen/StudyTimerLabel
+@onready var study_meta_label: Label = $StudyScreen/StudyMetaLabel
+@onready var study_progress_bar: ProgressBar = $StudyScreen/ProgressBar
+@onready var task_panel: Panel = $TaskPanel
+@onready var task_title: Label = $TaskPanel/TaskTitle
+@onready var task_text: RichTextLabel = $TaskPanel/TaskText
+@onready var reward_panel: Panel = $RewardPanel
+@onready var reward_list: VBoxContainer = $RewardPanel/RewardList
+@onready var toast_label: Label = $ToastLabel
+@onready var study_button: Button = $SideButtons/StudyButton
+@onready var weekly_task_button: Button = $SideButtons/WeeklyTaskButton
+@onready var daily_task_button: Button = $SideButtons/DailyTaskButton
+@onready var reward_button: Button = $SideButtons/RewardButton
+
+func _ready() -> void:
+    _setup_option_buttons()
+    _load_data()
+    _connect_buttons()
+    _refresh_rewards()
+    _refresh_tasks()
+    _refresh_ui()
+    _show_toast("歡迎回來，今天也一起讀書吧！")
+
+func _connect_buttons() -> void:
+    character_button.pressed.connect(_on_character_pressed)
+    study_button.pressed.connect(_on_open_study_pressed)
+    weekly_task_button.pressed.connect(func() -> void: _show_task_panel("weekly"))
+    daily_task_button.pressed.connect(func() -> void: _show_task_panel("daily"))
+    reward_button.pressed.connect(_on_reward_button_pressed)
+    $StudyPanel/StartStudyButton.pressed.connect(_on_start_study_pressed)
+    $StudyPanel/CloseStudyButton.pressed.connect(func() -> void: study_panel.visible = false)
+    $StudyScreen/EndStudyButton.pressed.connect(_on_end_study_pressed)
+    $TaskPanel/CloseTaskButton.pressed.connect(func() -> void: task_panel.visible = false)
+    $RewardPanel/CloseRewardButton.pressed.connect(func() -> void: reward_panel.visible = false)
+    coins_label.pressed.connect(_on_reward_button_pressed)
+
+func _setup_option_buttons() -> void:
+    study_subject_option.clear()
+    for subject in ["數學", "英文", "物理", "化學", "歷史", "地理", "國文"]:
+        study_subject_option.add_item(subject)
+
+    study_duration_option.clear()
+    for minutes in [30, 60, 90, 120]:
+        study_duration_option.add_item(str(minutes) + " 分鐘")
+
+    study_companion_option.clear()
+    for companion in ["男主角", "學長", "你", "小助手"]:
+        study_companion_option.add_item(companion)
+
+func _load_data() -> void:
+    if not FileAccess.file_exists(STORAGE_PATH):
+        return
+
+    var file = FileAccess.open(STORAGE_PATH, FileAccess.READ)
+    if file == null:
+        return
+
+    var json_text = file.get_as_text()
+    file.close()
+    if json_text.strip_edges() == "":
+        return
+
+    var parsed = JSON.parse_string(json_text)
+    if parsed is Dictionary:
+        for key in save_data.keys():
+            if parsed.has(key):
+                save_data[key] = parsed[key]
+
+func _save_data() -> void:
+    var file = FileAccess.open(STORAGE_PATH, FileAccess.WRITE)
+    if file == null:
+        return
+    file.store_string(JSON.stringify(save_data, "  "))
+    file.close()
+
+func _refresh_ui() -> void:
+    coins_label.text = "讀書幣：%d" % save_data["coins"]
+    _refresh_tasks()
+    _refresh_rewards()
+
+func _refresh_tasks() -> void:
+    var daily_text = _build_task_text("daily")
+    var weekly_text = _build_task_text("weekly")
+    task_text.text = daily_text if task_panel.visible and task_title.text == "日常任務" else weekly_text if task_panel.visible and task_title.text == "每週任務" else daily_text
+    _claim_completed_tasks()
+
+func _refresh_rewards() -> void:
+    for child in reward_list.get_children():
+        child.queue_free()
+
+    for reward in REWARD_OPTIONS:
+        var button = Button.new()
+        button.text = "%s (%d)" % [reward["name"], reward["cost"]]
+        button.custom_minimum_size = Vector2(0, 54)
+        if reward["id"] in save_data["purchased_rewards"]:
+            button.disabled = true
+            button.text = "%s 已購買" % reward["name"]
+        else:
+            button.pressed.connect(_on_reward_purchase.bind(reward))
+        reward_list.add_child(button)
+
+func _show_task_panel(type: String) -> void:
+    task_panel.visible = true
+    if type == "weekly":
+        task_title.text = "每週任務"
+        task_text.text = _build_task_text("weekly")
+    else:
+        task_title.text = "日常任務"
+        task_text.text = _build_task_text("daily")
+
+func _build_task_text(type: String) -> String:
+    var tasks = DAILY_TASK_TEMPLATES if type == "daily" else WEEKLY_TASK_TEMPLATES
+    var lines: Array = []
+    var progress_value = 0
+    var target_value = 0
+    var task_reward = 0
+
+    for task in tasks:
+        var progress = 0
+        if type == "daily":
+            progress = _get_daily_task_progress(task["id"])
+        else:
+            progress = _get_weekly_task_progress(task["id"])
+
+        target_value = int(task["goal"])
+        task_reward = int(task["reward"])
+        var status = "未完成"
+        var color = "#D65D5D"
+        if progress >= target_value:
+            status = "完成"
+            color = "#4B9B7D"
+        lines.append("[color=%s]● %s[/color] 進度：%s / %s  獎勵：%d 讀書幣" % [color, task["title"], str(progress), str(target_value), task_reward])
+
+    return "\n".join(lines)
+
+func _get_daily_task_progress(task_id: String) -> int:
+    var today = Time.get_date_string_from_system()
+    var sessions = save_data["sessions"]
+    var total_minutes = 0
+    var subject_set: Array = []
+    var session_count = 0
+
+    for session in sessions:
+        if session.get("date_key") == today:
+            total_minutes += int(session.get("minutes", 0))
+            session_count += 1
+            if session.get("subject") not in subject_set:
+                subject_set.append(session.get("subject"))
+
+    match task_id:
+        "daily_hours":
+            return total_minutes
+        "daily_session":
+            return session_count
+        "daily_subjects":
+            return subject_set.size()
+        _:
+            return 0
+
+func _get_weekly_task_progress(task_id: String) -> int:
+    var now = Time.get_unix_time_from_system()
+    var week_start = now - (7 * 24 * 60 * 60)
+    var total_minutes = 0
+    var subjects: Array = []
+    var session_count = 0
+
+    for session in save_data["sessions"]:
+        var timestamp = int(session.get("timestamp", 0))
+        if timestamp >= week_start:
+            total_minutes += int(session.get("minutes", 0))
+            session_count += 1
+            if session.get("subject") not in subjects:
+                subjects.append(session.get("subject"))
+
+    match task_id:
+        "weekly_hours":
+            return total_minutes
+        "weekly_subjects":
+            return subjects.size()
+        "weekly_sessions":
+            return session_count
+        _:
+            return 0
+
+func _claim_completed_tasks() -> void:
+    for task in DAILY_TASK_TEMPLATES:
+        var progress = _get_daily_task_progress(task["id"])
+        if progress >= int(task["goal"]) and task["id"] not in save_data["claimed_daily_tasks"]:
+            save_data["claimed_daily_tasks"].append(task["id"])
+            save_data["coins"] += int(task["reward"])
+            _show_toast("每日任務完成：%s，獲得 %d 讀書幣" % [task["title"], int(task["reward"])])
+
+    for task in WEEKLY_TASK_TEMPLATES:
+        var progress = _get_weekly_task_progress(task["id"])
+        if progress >= int(task["goal"]) and task["id"] not in save_data["claimed_weekly_tasks"]:
+            save_data["claimed_weekly_tasks"].append(task["id"])
+            save_data["coins"] += int(task["reward"])
+            _show_toast("每週任務完成：%s，獲得 %d 讀書幣" % [task["title"], int(task["reward"])])
+
+    _save_data()
+    _refresh_ui()
+
+func _on_character_pressed() -> void:
+    var lines = [
+        "今天也一起努力吧。",
+        "我會在這裡陪你讀書。",
+        "先把今天的目標完成，接下來就輕鬆一點。",
+        "書桌前的氛圍很舒服，讓我們一起專注。",
+    ]
+    var index = randi() % lines.size()
+    character_quote.text = lines[index]
+
+func _on_open_study_pressed() -> void:
+    study_panel.visible = true
+
+func _on_start_study_pressed() -> void:
+    var duration_minutes = int(study_duration_option.get_item_text(study_duration_option.selected))
+    var subject = study_subject_option.get_item_text(study_subject_option.selected)
+    var companion = study_companion_option.get_item_text(study_companion_option.selected)
+
+    current_session = {
+        "subject": subject,
+        "duration_minutes": duration_minutes,
+        "companion": companion,
+    }
+    countdown_remaining = float(duration_minutes * 60)
+    timer_active = true
+    study_panel.visible = false
+    study_screen.visible = true
+    study_meta_label.text = "%s • %d 分鐘 • %s" % [subject, duration_minutes, companion]
+    study_progress_bar.value = 0.0
+    _update_timer_display()
+
+func _on_end_study_pressed() -> void:
+    timer_active = false
+    current_session.clear()
+    study_screen.visible = false
+    _show_toast("本次讀書已結束，資料未計入。")
+
+func _process(delta: float) -> void:
+    if not timer_active:
+        return
+
+    countdown_remaining -= delta
+    if countdown_remaining <= 0:
+        countdown_remaining = 0.0
+        timer_active = false
+        _complete_study_session()
+        return
+
+    var percent = (1.0 - (countdown_remaining / (float(current_session.get("duration_minutes", 30)) * 60.0))) * 100.0
+    study_progress_bar.value = clamp(percent, 0.0, 100.0)
+    _update_timer_display()
+
+func _update_timer_display() -> void:
+    var total_seconds = int(countdown_remaining)
+    var minutes = total_seconds / 60
+    var seconds = total_seconds % 60
+    study_timer_label.text = "%02d:%02d" % [minutes, seconds]
+
+func _complete_study_session() -> void:
+    if current_session.is_empty():
+        return
+
+    var subject = current_session.get("subject", "學習")
+    var minutes = int(current_session.get("duration_minutes", 30))
+    var companion = current_session.get("companion", "男主角")
+    var reward = int((float(minutes) / 30.0) * 100.0)
+    var now = int(Time.get_unix_time_from_system())
+    var today = Time.get_date_string_from_system()
+
+    save_data["sessions"].append({
+        "subject": subject,
+        "minutes": minutes,
+        "companion": companion,
+        "reward": reward,
+        "date_key": today,
+        "timestamp": now,
+    })
+    save_data["coins"] += reward
+    current_session.clear()
+    study_screen.visible = false
+    _save_data()
+    _refresh_ui()
+    _show_toast("完成讀書！獲得 %d 讀書幣" % reward)
+
+func _on_reward_button_pressed() -> void:
+    reward_panel.visible = true
+
+func _on_reward_purchase(reward: Dictionary) -> void:
+    if reward["id"] in save_data["purchased_rewards"]:
+        _show_toast("這個獎勵已經購買過了。")
+        return
+
+    if save_data["coins"] < int(reward["cost"]):
+        _show_toast("讀書幣不足，繼續讀書吧！")
+        return
+
+    save_data["coins"] -= int(reward["cost"])
+    save_data["purchased_rewards"].append(reward["id"])
+    _save_data()
+    _refresh_ui()
+    _show_toast("已兌換：%s" % reward["name"])
+
+func _show_toast(message: String) -> void:
+    toast_label.text = message
+    toast_label.visible = true
+    toast_timer = 2.0
+
+func _process_toast(delta: float) -> void:
+    if not toast_label.visible:
+        return
+
+    toast_timer -= delta
+    if toast_timer <= 0:
+        toast_label.visible = false
+        toast_label.text = ""
+
+func _physics_process(delta: float) -> void:
+    _process_toast(delta)
+
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_WM_CLOSE_REQUEST:
+        _save_data()
